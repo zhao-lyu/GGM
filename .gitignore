@@ -1,0 +1,10 @@
+**/*.txt
+**/*.rds
+**/*.out
+**/*.err
+**/*.sh
+**/*.slurm
+scripts/
+check_lam.R
+gen_lam.R
+*.py
