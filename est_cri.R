@@ -1,7 +1,7 @@
 # IMPORT
 library("glasso")
 library("flare")
-source("/home/zlyu/R_exp/GGM2/GGM_functions.R")
+source(paste0(getwd(), "/GGM_functions.R"))
 
 
 # Get command line arguments
@@ -10,7 +10,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # Initialize variables
 n <- NULL
 p <- NULL
-r <- 1 # Default to rerun
+nt <- NULL
 model <- NULL
 gtype <- NULL
 
@@ -20,6 +20,7 @@ for (arg in args) {
     switch(split_arg[1],
             "--n" = {n <- as.integer(split_arg[2])},
             "--p" = {p <- as.integer(split_arg[2])},
+            "--nt" = {nt <- as.integer(split_arg[2])},
             "--m" = {model <- split_arg[2]},
             "--g" = {gtype <- split_arg[2]})
 }
@@ -36,6 +37,7 @@ if(sum(arg_len) < 4 || any(na_check)){
 # Print the arguments
 cat(n,"\n")
 cat(p, "\n")
+cat(nt, "\n")
 cat(model, "\n")
 cat(gtype, "\n")
 
@@ -44,10 +46,12 @@ cur_dir = getwd()
 dir_name = paste0(cur_dir, "/", gtype, "/", model,"_", gtype, "/")
 # GET TEMP SAVE
 temp_save_dir <- paste0(cur_dir,"/temp_est_save/")
-temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p)
-K_temp_name <- paste0("K_est_", gtype,"_",model,"_",n,"_",p)
+temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p,"_",nt)
+K_temp_name <- paste0("K_est_", gtype,"_",model,"_",n,"_",p,"_",nt)
 filename <- paste0(temp_save_dir, temp_name,".txt")
 data_filename <- paste0(temp_save_dir, K_temp_name,".rds")
+cat(filename,"\n")
+cat(data_filename,"\n")
 if(file.exists(filename) && file.exists(data_filename)){
     est_K.all <- readRDS(data_filename)
     est <- est_K.all$est

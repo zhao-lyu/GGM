@@ -3,31 +3,12 @@ library("R.utils")
 library("glasso")
 library("flare")
 
-# net_wrapper_with_timeout <- function(time.limit, S, zeroes, N, tol) {
-#     cat("\n net wrapper ", time.limit)
-#     tryCatch({
-#         withTimeout({
-#             if(nrow(zeroes)>0){
-#                 cat("\n net nonzero")
-#                 net <- glasso(s=S, 0, zero = zeroes, nobs = N, thr = tol/100, approx = FALSE, trace = 0, penalize.diagonal=FALSE)
-#                 cat("\n net passed?")
-#             }else{
-#                 net <- glasso(s=S, 0, nobs = N, thr = tol/100, approx = FALSE, trace = 0, penalize.diagonal=FALSE)
-#             }
-#             cat("\n net returns")
-#             return(net)
-#         }, timeout = time.limit)
-#     }, TimeoutException = function(e) {
-#         message("Function timed out for net.")
-#         return(NULL)
-#     })
-# }
-
-# # param: 
-# #      S: sample cov mat based on data
-# #      invSigma: estimated precision mat by glasso; path mat by clime or tiger
-# #      use_tol: take tolerance into consideration to decide the adjaceny mat based on invSigma
-# # return: the optimal glasso object satisfying the same zero pattern with invSigma
+# param: 
+#      S: sample cov mat based on data
+#      invSigma: estimated precision mat by glasso; path mat by clime or tiger
+#      N: the number of observations
+#      use_tol: take tolerance into consideration to decide the adjaceny mat based on invSigma
+# return: the optimal glasso object satisfying the same zero pattern with invSigma
 net_est <- function(S, invSigma, N, use_tol=TRUE, model="glasso")
 {
     if(model == "glasso"){
@@ -221,25 +202,4 @@ cal_num_edge <- function(K, total_edge_num, tol=1e-3){
   adj_mat_K <- ifelse(abs(K) > tol, 1, 0)
   diag(adj_mat_K) = 1
   return(sum(adj_mat_K) - nrow(K))
-}
-
-wrapper_with_timeout <- function(time.limit, model, data, S, fixed_lam, tol) {
-    tryCatch({
-        withTimeout({
-            if(model == "glasso"){
-                library(glasso)
-                est_path <- glassopath(s = S, rholist = fixed_lam, thr = tol/100, approx = FALSE, trace = 0, penalize.diagonal = FALSE)
-            }else  if(model == "clime"){
-                library(flare)
-                est_path <- sugm(data = data, lambda = rev(fixed_lam), method = "clime", sym ="and", prec = tol/100)
-            }else if(model == "tiger"){
-                library(flare)
-                est_path <- sugm(data = data, lambda = rev(fixed_lam), method = "tiger", sym ="and", prec = tol/100)
-            }
-            return(est_path)
-        }, timeout = time.limit)
-    }, TimeoutException = function(e) {
-        message("Function timed out.")
-        return(NULL)
-    })
 }

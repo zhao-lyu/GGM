@@ -8,7 +8,6 @@ cal_num_edge <- function(K, total_edge_num, tol){
 
 cal_lam <- function(data,total_edge_num,model="glasso",Nlam = 100,factor = 0.95,edge_ratio = 2,tol=1e-3){
     library("glasso")
-    set.seed(12)
     S <- cov(data)
     n <- nrow(data)
     p <- ncol(data)
@@ -54,31 +53,50 @@ cal_lam <- function(data,total_edge_num,model="glasso",Nlam = 100,factor = 0.95,
     return(fixed_lam)
 }
 
+# Get command line arguments
+args <- commandArgs(trailingOnly = TRUE)
+
+nt <- NULL
+gtype <- NULL
+
+# Parse command line arguments
+for (arg in args) {
+    split_arg <- strsplit(arg, "=")[[1]]
+    switch(split_arg[1],
+            "--nt" = {nt <- as.integer(split_arg[2])},
+            "--g" = {gtype <- split_arg[2]})
+}
+
+cat("nt", nt,"\n")
+cat("gtype", gtype,"\n")
+
 # get cur dir
 cur_dir <- getwd()
 file_path <- paste0(cur_dir, "/Data/")
 
 # get all data files
-file_list <- list.files(file_path, pattern = "\\.rds$")
-match_str <- "lam"
-G_file <- file_list[!grepl(match_str, file_list)]
-# # DELETE BELOW TWO LINES AFTER TESTING.......................
-args = commandArgs(TRUE)
-gtype_str <- unlist(args)
+file_list <- list.files(file_path, pattern = paste0("_", nt, "\\.rds$"))
+file_list <- file_list[grepl(gtype, file_list)]
+G_file <- file_list[!grepl("lam", file_list)]
 
-G_file <- G_file[grepl(gtype_str, G_file)]
+# # # DELETE BELOW TWO LINES AFTER TESTING.......................
+# args = commandArgs(TRUE)
+# gtype_str <- unlist(args)
+# G_file <- G_file[grepl(gtype_str, G_file)]
+
 file_list <- paste0(file_path, G_file)
 # cat(file_list)
 
 
-# CAN MAKE IT AS AN INPUT
-# CHANGED TO BE SAME AS p_list
-n_list <- c(10,20,50,100,200,500)
+
+n_val <- Sys.getenv('N_VAL')
+n_list <- as.integer(strsplit(n_val, ",")[[1]])
+# n_list <- c(10,20,50,100,200,500,800,1000)
 Nlam <- 100
 
 
+
 for(file_name in file_list){
-    cat("\nWTF: ", file_name,"\n")
     G <- readRDS(file_name)
     data = G$data
     p = ncol(data)
@@ -86,7 +104,7 @@ for(file_name in file_list){
     total_edge_num = G$total_edge_num
     # lam_file <- paste0(file_path, graph,"_lam.rds")
     lam_file <- paste0(strsplit(file_name,".rds")[1],"_lamALL.rds")
-    cat(lam_file,"\n")
+    # cat(lam_file,"\n")
     lams_g <- t(sapply(n_list, function(n){
         subdata <- data[1:n,]
         cal_lam(data=subdata, total_edge_num=total_edge_num,Nlam=Nlam,model="glasso")
@@ -99,9 +117,6 @@ for(file_name in file_list){
         subdata <- data[1:n,]
         cal_lam(data=subdata, total_edge_num=total_edge_num,Nlam=Nlam,model="tiger")
     }))
-    # cat(min(lams_g), max(lams_g),"\n")
-    # cat(min(lams_c), max(lams_c),"\n")
-    # cat(min(lams_t), max(lams_t),"\n")
     lams_g = matrix(lams_g, nrow=length(n_list), ncol=Nlam)
     rownames(lams_g) <- n_list
     lams_c = matrix(lams_c, nrow=length(n_list), ncol=Nlam)
@@ -109,7 +124,7 @@ for(file_name in file_list){
     lams_t = matrix(lams_t, nrow=length(n_list), ncol=Nlam)
     rownames(lams_t) <- n_list
     lams <- list(glasso = lams_g, clime = lams_c, tiger = lams_t)
-    cat("Saving Lambda for ", graph, " with dim = ", p, "in ", file_path, "............ ")
+    cat("Saving Lambda for ", graph, " with dim = ", p, "in ", lam_file, "............ ")
     saveRDS(lams, file = lam_file)
     cat("DONE\n")
 }

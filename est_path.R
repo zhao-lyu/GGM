@@ -1,7 +1,7 @@
 # IMPORT
 library("glasso")
 library("flare")
-source("/home/zlyu/R_exp/GGM2/GGM_functions.R")
+source(paste0(getwd(), "/GGM_functions.R"))
 
 
 # Get command line arguments
@@ -10,6 +10,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # Initialize variables
 n <- NULL
 p <- NULL
+nt <- NULL
 r <- 1 # Default to rerun
 model <- NULL
 gtype <- NULL
@@ -21,6 +22,7 @@ for (arg in args) {
             "--n" = {n <- as.integer(split_arg[2])},
             "--p" = {p <- as.integer(split_arg[2])},
             "--r" = {r <- as.integer(split_arg[2])},
+            "--nt" = {nt <- as.integer(split_arg[2])},
             "--m" = {model <- split_arg[2]},
             "--g" = {gtype <- split_arg[2]})
 }
@@ -37,20 +39,21 @@ if(sum(arg_len) < 4 || any(na_check)){
 # Print the arguments
 cat(n,"\n")
 cat(p, "\n")
+cat(nt, "\n")
 cat(model, "\n")
 cat(gtype, "\n")
 
 # LOAD DATA and File
 cur_dir = getwd()
 data_path  <- paste0(cur_dir, "/Data/")
-g_file <- paste0(data_path,gtype,"_", p, ".rds")
-lam_file <- paste0(data_path,gtype,"_",p,"_lamALL.rds")
+g_file <- paste0(data_path,gtype,"_", p, "_", nt, ".rds")
+lam_file <- paste0(data_path,gtype,"_",p,"_", nt, "_lamALL.rds")
 cat(g_file,"\n")
 cat(lam_file,"\n")
 
 # GET TEMP SAVE
 temp_save_dir <- paste0(cur_dir,"/temp_est_save/")
-temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p)
+temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p,"_",nt)
 filename <- paste0(temp_save_dir, temp_name,".txt")
 data_filename <- paste0(temp_save_dir, temp_name,".rds")
 cat("SAVE TO :", filename,"\n")

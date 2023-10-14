@@ -1,7 +1,7 @@
 # IMPORT
 library("glasso")
 library("flare")
-source("/home/zlyu/R_exp/GGM2/GGM_functions.R")
+source(paste0(getwd(), "/GGM_functions.R"))
 
 
 # Get command line arguments
@@ -10,7 +10,7 @@ args <- commandArgs(trailingOnly = TRUE)
 # Initialize variables
 n <- NULL
 p <- NULL
-r <- 1 # Default to rerun
+nt <- NULL
 model <- NULL
 gtype <- NULL
 
@@ -20,6 +20,7 @@ for (arg in args) {
     switch(split_arg[1],
             "--n" = {n <- as.integer(split_arg[2])},
             "--p" = {p <- as.integer(split_arg[2])},
+            "--nt" = {nt <- as.integer(split_arg[2])},
             "--m" = {model <- split_arg[2]},
             "--g" = {gtype <- split_arg[2]})
 }
@@ -36,22 +37,20 @@ if(sum(arg_len) < 4 || any(na_check)){
 # Print the arguments
 cat(n,"\n")
 cat(p, "\n")
+cat(nt, "\n")
 cat(model, "\n")
 cat(gtype, "\n")
 
 # LOAD DATA and File
 cur_dir = getwd()
-# data_path  <- paste0(cur_dir, "/Data/")
-# g_file <- paste0(data_path,gtype,"_", p, ".rds")
-# lam_file <- paste0(data_path,gtype,"_",p,"_lamALL.rds")
-# cat(g_file,"\n")
-# cat(lam_file,"\n")
 
 # GET TEMP SAVE
 temp_save_dir <- paste0(cur_dir,"/temp_est_save/")
-temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p)
+temp_name <- paste0("est_", gtype,"_",model,"_",n,"_",p,"_",nt)
 filename <- paste0(temp_save_dir, temp_name,".txt")
 data_filename <- paste0(temp_save_dir, temp_name,".rds")
+cat(filename,"\n")
+cat(data_filename,"\n")
 if(file.exists(filename) && file.exists(data_filename)){
     est_path.all <- readRDS(data_filename)
     est_path <- est_path.all$est_path
@@ -73,7 +72,8 @@ if(file.exists(filename) && file.exists(data_filename)){
 # SET PARAM
 use_tol = TRUE
 tol = 1e-3
-new_data_filename <- paste0(temp_save_dir, "K_est_", gtype,"_",model,"_",n,"_",p,".rds")
+new_data_filename <- paste0(temp_save_dir, "K_est_", gtype,"_",model,"_",n,"_",p,"_",nt,".rds")
+cat(new_data_filename,"\n")
 
 est <- NULL
 if(model == "glasso"){
@@ -89,11 +89,17 @@ if(model == "glasso"){
         invSigma <- est_path$path[[i_r]]
         net_est(S = S, invSigma = invSigma, N = n, use_tol = use_tol, model = "nonglasso")
     })
+}else if(model == "NS"){
+    # a list of optimal lasso based on zero patterns of wi in g_path
+    est <- sapply(seq_along(fixed_lam), function(i){
+        invSigma <- est_path[[i]]
+        net_est(S = S, invSigma = invSigma, N = n, use_tol = use_tol, model = "NS")
+    })
 }
 
 output <- list(est=est, n=n, p=p, gtype=gtype, model=model, fixed_lam=fixed_lam, S=S, data=data, adj_mat_True=adj_mat_True, theta_0=theta_0)
 
 cat("Saving K_est for ", gtype, " via ", model, " with p, n = ", p, n, "in ", new_data_filename, "............")
 saveRDS(output, file = new_data_filename)
-# cat("DONE\n")
+cat("DONE\n")
 
